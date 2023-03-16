@@ -1,4 +1,4 @@
-from aiogram import Router
+from aiogram import Router, Bot
 from aiogram.filters import Text
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
@@ -6,7 +6,7 @@ from aiogram.types import Message
 
 from db.admin_msg import get_msg_text, change_msg
 from db.users import get_user, get_users_count, check_admin, get_admins_list_text, del_admin_from_db, add_admin_to_db, \
-    get_user_by_name
+    get_user_by_name, get_all_users_id
 from helper import get_admin_username
 from keyboards.main import custom_kb, del_admin_kb
 
@@ -20,6 +20,8 @@ class AdminState(StatesGroup):
     admin_msg = State()
     check_msg = State()
     confirm_msg = State()
+    mailing = State()
+    confirm_mail = State()
 
 
 @admin_router.message(Text(text=["admin", "Админ панель"]))
@@ -31,7 +33,8 @@ async def admin_panel(message: Message, state: FSMContext, session_maker):
     await state.set_state(AdminState.admin)
     await message.answer("Что хотим сделать",
                          reply_markup=custom_kb("Изменить сообщения в топе", "Узнать кол-во игроков",
-                                                "Добавить администратора", "Удалить администратора"))
+                                                "Добавить администратора", "Удалить администратора",
+                                                "Рассылка пользователям"))
 
 
 @admin_router.message(AdminState.admin, Text(text="Узнать кол-во игроков"))
@@ -140,5 +143,36 @@ async def confirm_msg(message: Message, state: FSMContext, session_maker):
                              reply_markup=custom_kb("Админ панель"))
         await state.set_state(AdminState.check_msg)
 
+
+@admin_router.message(AdminState.admin, Text(text="Рассылка пользователям"))
+async def mailing(message: Message, state: FSMContext):
+    await message.answer("Введите текст, который необходимо отправить пользователям",
+                         reply_markup=custom_kb("Админ панель"))
+    await state.set_state(AdminState.mailing)
+
+
+@admin_router.message(AdminState.mailing)
+async def wait_mail(message: Message, state: FSMContext):
+    await state.update_data(mail=message.text)
+    await message.answer(f"Всем пользователям будет отправлено сообщение:\n{message.text}\n\n"
+                         f"Подтвердить или изменить сообщение?",
+                         reply_markup=custom_kb("Подтвердить", "Изменить"))
+    await state.set_state(AdminState.confirm_mail)
+
+
+@admin_router.message(AdminState.confirm_mail, Text(text=['Подтвердить', 'Изменить']))
+async def confirm_mail(message: Message, state: FSMContext, session_maker, bot: Bot):
+    if message.text == 'Подтвердить':
+        id_list = await get_all_users_id(session_maker)
+        data = await state.get_data()
+        for id in id_list:
+            await bot.send_message(id, data.get("mail"))
+        await message.answer(f"Ваше сообщение отправлено всем пользователям")
+        await state.set_state(AdminState.admin)
+        await state.set_data({})
+    else:
+        await message.answer("Введите текст, который необходимо отправить пользователям",
+                             reply_markup=custom_kb("Админ панель"))
+        await state.set_state(AdminState.mailing)
 
 

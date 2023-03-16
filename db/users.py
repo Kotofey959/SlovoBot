@@ -143,3 +143,14 @@ async def change_top_user(user_id, session_maker, in_top):
             sql_res = await session.execute(select(User).where(User.user_id == user_id))
             user: User = sql_res.scalar()
             user.in_top = in_top
+
+
+async def get_all_users_id(session_maker):
+    async with session_maker() as session:
+        async with session.begin():
+            sql_res = await session.execute(select(User))
+            all_users = sql_res.all()
+            id_list = []
+            for user in all_users:
+                id_list.append(user[0].user_id)
+            return id_list
