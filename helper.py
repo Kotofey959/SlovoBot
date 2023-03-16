@@ -3,6 +3,8 @@ import random
 
 from aiogram.fsm.context import FSMContext
 
+from db.users import get_admins_list_text
+
 
 def normalize_word(word: str) -> str:
     return word.strip().lower()
@@ -56,6 +58,16 @@ async def get_first_random_word(state: FSMContext) -> str:
         random_word = random.choice(list(words.get(random_letter)))
         await state.update_data(previous_word=random_word)
         return random_word.capitalize()
+
+
+async def get_admin_username(text, session_maker):
+    admins_list = await get_admins_list_text(session_maker)
+    if text not in admins_list:
+        return None
+    return text
+
+
+
 
 
 

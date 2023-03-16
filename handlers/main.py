@@ -6,9 +6,11 @@ from aiogram.filters import Text, CommandStart
 from sqlalchemy import select
 
 from db import User
-from db.users import get_user, create_user, get_top_users, get_top_text
+from db.admin_msg import get_admin_text
+from db.users import get_user, create_user, get_top_users, get_top_text, get_top_id_list, change_user_message, \
+    check_user_in_top, change_top_user
 from helper import get_first_random_word, get_last_letter, normalize_word, get_words_by_letter, get_random_word
-from keyboards.admin import custom_kb
+from keyboards.main import custom_kb
 
 main_router = Router()
 
@@ -17,6 +19,8 @@ class GameStates(StatesGroup):
     main_menu = State()
     waiting_word = State()
     rating = State()
+    change_msg = State()
+    check_msg = State()
 
 
 @main_router.message(CommandStart())
@@ -26,9 +30,12 @@ async def start_menu(message: Message, state: FSMContext, session_maker):
                           username=message.from_user.username,
                           session_maker=session_maker)
     await state.set_state(GameStates.main_menu)
+    await state.set_data({})
+    await message.answer('Посмотри рейтинг игроков или начни новую игру',
+                         reply_markup=custom_kb("Начать игру", "Рейтинг"))
 
 
-@main_router.message(GameStates.waiting_word, Text(text='Завершить игру'))
+@main_router.message(Text(text=['Завершить игру', 'Главное меню']))
 async def end_game(message: Message, state: FSMContext):
     await state.set_state(GameStates.main_menu)
     await state.set_data({})
@@ -76,14 +83,62 @@ async def game(message: Message, state: FSMContext, session_maker):
             sql_res = await session.execute(select(User).filter_by(user_id=message.from_user.id))
             user: User = sql_res.scalar()
             user.points += 1
+    top_id_list = await get_top_id_list(session_maker)
+    in_top = await check_user_in_top(message.from_user.id, session_maker)
+    user_id = message.from_user.id
+    if user_id in top_id_list and not in_top:
+        await change_top_user(user_id,  session_maker, True)
+        await message.answer('Вы попали в топ-10 игроков. После завершения игры откройте рейтинг и оставьте сообщение'
+                             ', которое увидят все.')
+    if user_id not in top_id_list and in_top:
+        await message.answer('Ты выпал из топ-10 игроков. Зарабатывай баллы и возвращайся в топ.')
 
 
 @main_router.message(GameStates.main_menu, Text(text='Рейтинг'))
 async def rating(message: Message, state: FSMContext, session_maker):
     await state.set_state(GameStates.rating)
     text = await get_top_text(session_maker)
-    await message.answer(text, reply_markup=custom_kb('Изменить сообщение', 'Главное меню'))
+    admin_text = await get_admin_text(session_maker)
+    if admin_text:
+        await message.answer(admin_text)
+    await message.answer(text)
+    await message.answer("Находясь в топе игроков, ты можешь оставить сообщение под своим ником"
+                         " которое будут видеть все игроки",
+                         reply_markup=custom_kb('Изменить сообщение', 'Главное меню')
+                         )
 
 
-# @main_router.message(GameStates.rating, Text(text='Изменить сообщение'))
-# async def change_msg(message: Message, state: FSMContext, session_maker):
+@main_router.message(GameStates.rating, Text(text='Изменить сообщение'))
+async def pre_change_msg(message: Message, state: FSMContext):
+    await message.answer("Введи сообщение, которое будет отображаться под твоим ником в топе игроков.",
+                         reply_markup=custom_kb("Главное меню"))
+    await state.set_state(GameStates.change_msg)
+
+
+@main_router.message(GameStates.change_msg)
+async def check_msg(message: Message, state: FSMContext):
+    if len(message.text) > 200:
+        await message.answer("Сообщение должно содержать не более 200 символов. Введи сообщение короче",
+                             reply_markup=custom_kb("Главное меню"))
+        return
+    await message.answer(f"В топе игроков под твоим ником будет следующее сообщение:\n {message.text}\n\n"
+                         f"Подтвердить данное сообщение? Если хочешь изменить его то нажми изменить.",
+                         reply_markup=custom_kb("Подтвердить", "Изменить"))
+    await state.update_data(user_message=message.text)
+    await state.set_state(GameStates.check_msg)
+
+
+@main_router.message(GameStates.check_msg, Text(text=['Подтвердить', 'Изменить']))
+async def change_msg(message: Message, state: FSMContext, session_maker):
+    if message.text == "Подтвердить":
+        top_id_list = await get_top_id_list(session_maker)
+        data = await state.get_data()
+        await change_user_message(message.from_user.id, data.get("user_message"), session_maker)
+        await state.set_data({})
+        await message.answer("Отлично! Теперь твое сообщение будет отображаться в топе игроков.",
+                             reply_markup=custom_kb("Главное меню"))
+    else:
+        await message.answer("Введи сообщение, которое будет отображаться под твоим нииком в топе игроков.",
+                             reply_markup=custom_kb("Главное меню"))
+        await state.set_state(GameStates.change_msg)
+        await state.set_data({})
