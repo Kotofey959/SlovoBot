@@ -18,7 +18,7 @@ def get_last_letter(word: str) -> str:
 
 
 def get_words_by_letter(letter: str) -> list[str]:
-    with open("words.json", "r") as f:
+    with open("words.json", "r", encoding='Windows-1251') as f:
         words = json.load(f)
         return words.get(letter)
 
@@ -30,7 +30,7 @@ async def check_word_used(word, state: FSMContext) -> bool:
 
 
 async def check_word_in_dict(word) -> bool:
-    with open("words.json", "r") as f:
+    with open("words.json", "r", encoding='Windows-1251') as f:
         words = json.load(f)
         word = normalize_word(word)
         return word in words.get(word[0])
