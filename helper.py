@@ -37,7 +37,7 @@ async def check_word_in_dict(word) -> bool:
 
 
 async def get_random_word(word: str, state: FSMContext) -> str:
-    with open("words.json", "r") as f:
+    with open("words.json", "r", encoding='Windows-1251') as f:
         words = json.load(f)
         data = await state.get_data()
         used_words = data.get("used_words")
