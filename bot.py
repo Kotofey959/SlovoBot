@@ -28,7 +28,7 @@ async def main():
     postgres_url = URL.create(
         'postgresql+asyncpg',
         username='postgres',
-        password='',
+        password='lol4ik594770146',
         host='localhost',
         port=5432,
         database='sammy'
