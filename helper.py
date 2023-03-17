@@ -67,7 +67,12 @@ async def get_admin_username(text, session_maker):
     return text
 
 
+def create_ref_link(user_id):
+    return f"https://t.me/SlovogonBot?start={user_id}"
 
 
-
-
+def get_ref_id(link):
+    link_split = link.split()
+    if len(link_split) == 2 and link_split[1].isdigit():
+        return int(link_split[1])
+    return None

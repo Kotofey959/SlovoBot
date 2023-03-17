@@ -8,8 +8,9 @@ from sqlalchemy import select
 from db import User
 from db.admin_msg import get_admin_text
 from db.users import get_user, create_user, get_top_users, get_top_text, get_top_id_list, change_user_message, \
-    check_user_in_top, change_top_user
-from helper import get_first_random_word, get_last_letter, normalize_word, get_words_by_letter, get_random_word
+    check_user_in_top, change_top_user, add_ref_to_user
+from helper import get_first_random_word, get_last_letter, normalize_word, get_words_by_letter, get_random_word, \
+    create_ref_link, get_ref_id
 from keyboards.main import custom_kb
 
 main_router = Router()
@@ -29,10 +30,14 @@ async def start_menu(message: Message, state: FSMContext, session_maker):
         await create_user(user_id=message.from_user.id,
                           username=message.from_user.username,
                           session_maker=session_maker)
+        ref_id = get_ref_id(message.text)
+        if ref_id and await get_user(user_id=ref_id, session_maker=session_maker):
+            await add_ref_to_user(user_id=ref_id, session_maker=session_maker)
     await state.set_state(GameStates.main_menu)
     await state.set_data({})
     await message.answer('Посмотри рейтинг игроков или начни новую игру',
-                         reply_markup=custom_kb("Начать игру", "Рейтинг"))
+                         reply_markup=custom_kb("Начать игру", "Рейтинг",
+                                                "Пригласи друга и получи 100 баллов"))
 
 
 @main_router.message(Text(text=['Завершить игру', 'Главное меню']))
@@ -40,7 +45,15 @@ async def end_game(message: Message, state: FSMContext):
     await state.set_state(GameStates.main_menu)
     await state.set_data({})
     await message.answer('Посмотри рейтинг игроков или начни новую игру',
-                         reply_markup=custom_kb("Начать игру", "Рейтинг"))
+                         reply_markup=custom_kb("Начать игру", "Рейтинг",
+                                                "Пригласи друга и получи 100 баллов"))
+
+
+@main_router.message(GameStates.main_menu, Text(text='Пригласи друга и получи 100 баллов'))
+async def game_rating(message: Message, state: FSMContext, session_maker):
+    ref_link = create_ref_link(message.from_user.id)
+    await message.answer(f"Отправьте ссылку на бота другу. Когда он перейдет по ней в бота, вы получите 100 баллов.")
+    await message.answer(ref_link, reply_markup=custom_kb("Главное меню"))
 
 
 @main_router.message(GameStates.main_menu, Text(text='Начать игру'))
@@ -92,6 +105,7 @@ async def game(message: Message, state: FSMContext, session_maker):
                              ', которое увидят все.')
     if user_id not in top_id_list and in_top:
         await message.answer('Ты выпал из топ-10 игроков. Зарабатывай баллы и возвращайся в топ.')
+        await change_top_user(user_id,  session_maker, False)
 
 
 @main_router.message(GameStates.main_menu, Text(text='Рейтинг'))

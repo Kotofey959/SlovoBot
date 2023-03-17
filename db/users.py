@@ -154,3 +154,12 @@ async def get_all_users_id(session_maker):
             for user in all_users:
                 id_list.append(user[0].user_id)
             return id_list
+
+
+async def add_ref_to_user(user_id, session_maker):
+    async with session_maker() as session:
+        async with session.begin():
+            sql_res = await session.execute(select(User).where(User.user_id == user_id))
+            user: User = sql_res.scalar()
+            user.points += 100
+
