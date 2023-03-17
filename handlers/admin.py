@@ -167,7 +167,8 @@ async def confirm_mail(message: Message, state: FSMContext, session_maker, bot: 
         data = await state.get_data()
         for id in id_list:
             await bot.send_message(id, data.get("mail"))
-        await message.answer(f"Ваше сообщение отправлено всем пользователям")
+        await message.answer(f"Ваше сообщение отправлено всем пользователям",
+                             reply_markup=custom_kb("Админ панель"))
         await state.set_state(AdminState.admin)
         await state.set_data({})
     else:
