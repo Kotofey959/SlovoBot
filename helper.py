@@ -52,7 +52,7 @@ async def get_random_word(word: str, state: FSMContext) -> str:
 
 
 async def get_first_random_word(state: FSMContext) -> str:
-    with open("words.json", "r") as f:
+    with open("words.json", "r", encoding='Windows-1251') as f:
         words = json.load(f)
         random_letter = random.choice(list(words.keys()))
         random_word = random.choice(list(words.get(random_letter)))
