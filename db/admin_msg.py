@@ -4,7 +4,7 @@ from .database import BaseModel
 
 
 class AdminMsg(BaseModel):
-    __tablename__ = 'AdminMsg'
+    __tablename__ = 'adminmsg'
     num_msg = Column(VARCHAR(20), unique=True, nullable=False, primary_key=True)
     msg_text = Column(VARCHAR(1200), unique=False, nullable=True)
 
