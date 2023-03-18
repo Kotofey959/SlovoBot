@@ -8,7 +8,7 @@ from sqlalchemy import select
 from db import User
 from db.admin_msg import get_admin_text
 from db.users import get_user, create_user, get_top_users, get_top_text, get_top_id_list, change_user_message, \
-    check_user_in_top, change_top_user, add_ref_to_user
+    check_user_in_top, change_top_user, add_ref_to_user, get_user_points
 from helper import get_first_random_word, get_last_letter, normalize_word, get_words_by_letter, get_random_word, \
     create_ref_link, get_ref_id
 from keyboards.main import custom_kb
@@ -113,9 +113,13 @@ async def rating(message: Message, state: FSMContext, session_maker):
     await state.set_state(GameStates.rating)
     text = await get_top_text(session_maker)
     admin_text = await get_admin_text(session_maker)
+    top_id_list = await get_top_id_list(session_maker)
     if admin_text:
         await message.answer(admin_text, disable_web_page_preview=True)
     await message.answer(text, disable_web_page_preview=True)
+    if message.from_user.id not in top_id_list:
+        user_points = await get_user_points(message.from_user.id, session_maker)
+        await message.answer(f"Сейчас у тебя {user_points} баллов. Играй активнее и попади в топ.")
     await message.answer("Находясь в топе игроков, ты можешь оставить сообщение под своим ником"
                          " которое будут видеть все игроки",
                          reply_markup=custom_kb('Изменить сообщение', 'Главное меню')

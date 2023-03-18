@@ -163,3 +163,11 @@ async def add_ref_to_user(user_id, session_maker):
             user: User = sql_res.scalar()
             user.points += 100
 
+
+async def get_user_points(user_id, session_maker):
+    async with session_maker() as session:
+        async with session.begin():
+            sql_res = await session.execute(select(User).where(User.user_id == user_id))
+            user: User = sql_res.scalar()
+            points = user.points
+            return points
