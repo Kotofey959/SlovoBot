@@ -114,8 +114,8 @@ async def rating(message: Message, state: FSMContext, session_maker):
     text = await get_top_text(session_maker)
     admin_text = await get_admin_text(session_maker)
     if admin_text:
-        await message.answer(admin_text)
-    await message.answer(text)
+        await message.answer(admin_text, disable_web_page_preview=True)
+    await message.answer(text, disable_web_page_preview=True)
     await message.answer("Находясь в топе игроков, ты можешь оставить сообщение под своим ником"
                          " которое будут видеть все игроки",
                          reply_markup=custom_kb('Изменить сообщение', 'Главное меню')
