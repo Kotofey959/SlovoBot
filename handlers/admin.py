@@ -199,8 +199,9 @@ async def confirm_words(message: Message, state: FSMContext):
     if message.text == 'Подтвердить':
         data = await state.get_data()
         add_new_words(data.get("words"))
-        await message.answer(f"Слова {data.get('words')} успешно добавлены в словарь")
+        await message.answer(f"Слова {data.get('words')} успешно добавлены в словарь",
+                             reply_markup=custom_kb("Админ панель"))
     else:
         await message.answer("Отправьте слова, которые нужно добавить. Если слов несколько, укажите их через запятую.",
-                         reply_markup=custom_kb("Админ панель"))
+                             reply_markup=custom_kb("Админ панель"))
         await state.set_state(AdminState.wait_words)
