@@ -76,3 +76,16 @@ def get_ref_id(link):
     if len(link_split) == 2 and link_split[1].isdigit():
         return int(link_split[1])
     return None
+
+
+def new_words_to_list(new_words):
+    return [normalize_word(word) for word in new_words.split(",")]
+
+
+def add_new_words(lst_words):
+    with open("words.json", 'r', encoding='Windows-1251') as file:
+        words = json.load(file)
+        for word in lst_words:
+            words.get(word[0]).append(word)
+        with open("words.json", "w", encoding='Windows-1251') as f:
+            json.dump(words, f, indent=4, ensure_ascii=False)

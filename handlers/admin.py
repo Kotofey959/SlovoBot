@@ -7,7 +7,7 @@ from aiogram.types import Message
 from db.admin_msg import get_msg_text, change_msg
 from db.users import get_user, get_users_count, check_admin, get_admins_list_text, del_admin_from_db, add_admin_to_db, \
     get_user_by_name, get_all_users_id
-from helper import get_admin_username
+from helper import get_admin_username, new_words_to_list, add_new_words
 from keyboards.main import custom_kb, del_admin_kb
 
 admin_router = Router()
@@ -22,6 +22,8 @@ class AdminState(StatesGroup):
     confirm_msg = State()
     mailing = State()
     confirm_mail = State()
+    wait_words = State()
+    confirm_words = State()
 
 
 @admin_router.message(Text(text=["admin", "Админ панель"]))
@@ -34,7 +36,7 @@ async def admin_panel(message: Message, state: FSMContext, session_maker):
     await message.answer("Что хотим сделать",
                          reply_markup=custom_kb("Изменить сообщения в топе", "Узнать кол-во игроков",
                                                 "Добавить администратора", "Удалить администратора",
-                                                "Рассылка пользователям"))
+                                                "Рассылка пользователям", "Добавить новые слова"))
 
 
 @admin_router.message(AdminState.admin, Text(text="Узнать кол-во игроков"))
@@ -177,3 +179,28 @@ async def confirm_mail(message: Message, state: FSMContext, session_maker, bot: 
         await state.set_state(AdminState.mailing)
 
 
+@admin_router.message(AdminState.admin, Text(text="Добавить новые слова"))
+async def new_words(message: Message, state: FSMContext):
+    await message.answer("Отправьте слова, которые нужно добавить. Если слов несколько, укажите их через запятую.",
+                         reply_markup=custom_kb("Админ панель"))
+    await state.set_state(AdminState.wait_words)
+
+
+@admin_router.message(AdminState.wait_words)
+async def check_words(message: Message, state: FSMContext):
+    await message.answer(f"Следующие слова: {message.text} будут добавлены в словарь, подтвердить или изменить?",
+                         reply_markup=custom_kb("Подтвердить", "Изменить"))
+    await state.update_data(words=new_words_to_list(message.text))
+    await state.set_state(AdminState.confirm_words)
+
+
+@admin_router.message(AdminState.confirm_words, Text(text=['Подтвердить', 'Изменить']))
+async def confirm_words(message: Message, state: FSMContext):
+    if message.text == 'Подтвердить':
+        data = await state.get_data()
+        add_new_words(data.get("words"))
+        await message.answer(f"Слова {data.get('words')} успешно добавлены в словарь")
+    else:
+        await message.answer("Отправьте слова, которые нужно добавить. Если слов несколько, укажите их через запятую.",
+                         reply_markup=custom_kb("Админ панель"))
+        await state.set_state(AdminState.wait_words)
