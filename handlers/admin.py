@@ -7,7 +7,7 @@ from aiogram.types import Message
 from db.admin_msg import get_msg_text, change_msg
 from db.users import get_user, get_users_count, check_admin, get_admins_list_text, del_admin_from_db, add_admin_to_db, \
     get_user_by_name, get_all_users_id
-from helper import get_admin_username, new_words_to_list, add_new_words
+from helper import get_admin_username, new_words_to_list, add_new_words, check_words_in_dict
 from keyboards.main import custom_kb, del_admin_kb
 
 admin_router = Router()
@@ -188,6 +188,12 @@ async def new_words(message: Message, state: FSMContext):
 
 @admin_router.message(AdminState.wait_words)
 async def check_words(message: Message, state: FSMContext):
+    invalid_words = check_words_in_dict(new_words_to_list(message.text))
+    if invalid_words:
+        await message.answer(f"Слова {invalid_words} уже есть в словаре.")
+        await message.answer("Отправьте слова, которые нужно добавить. Если слов несколько, укажите их через запятую.",
+                             reply_markup=custom_kb("Админ панель"))
+        return
     await message.answer(f"Следующие слова: {message.text} будут добавлены в словарь, подтвердить или изменить?",
                          reply_markup=custom_kb("Подтвердить", "Изменить"))
     await state.update_data(words=new_words_to_list(message.text))

@@ -89,3 +89,13 @@ def add_new_words(lst_words):
             words.get(word[0]).append(word)
         with open("words.json", "w", encoding='Windows-1251') as f:
             json.dump(words, f, indent=4, ensure_ascii=False)
+
+
+def check_words_in_dict(lst_words):
+    with open("words.json", 'r', encoding='Windows-1251') as file:
+        words = json.load(file)
+        invalid_words = []
+        for word in lst_words:
+            if word in words.get(word[0]):
+                invalid_words.append(word)
+        return invalid_words
