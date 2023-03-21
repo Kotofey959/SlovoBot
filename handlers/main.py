@@ -114,9 +114,9 @@ async def rating(message: Message, state: FSMContext, session_maker):
     text = await get_top_text(session_maker)
     admin_text = await get_admin_text(session_maker)
     top_id_list = await get_top_id_list(session_maker)
+    await message.answer(text, disable_web_page_preview=True)
     if admin_text:
         await message.answer(admin_text, disable_web_page_preview=True)
-    await message.answer(text, disable_web_page_preview=True)
     if message.from_user.id not in top_id_list:
         user_points = await get_user_points(message.from_user.id, session_maker)
         await message.answer(f"Сейчас у тебя {user_points} баллов. Играй активнее и попади в топ.")
