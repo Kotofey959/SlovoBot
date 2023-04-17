@@ -16,7 +16,11 @@ class User(BaseModel):
         return f'<User:{self.user_id}>'
 
 
-async def create_user(user_id, username, session_maker):
+async def create_user(user_id: int, username: str, session_maker):
+    """
+    Создание пользователя в БД
+
+    """
     async with session_maker() as session:
         async with session.begin():
             user = User(
@@ -27,7 +31,11 @@ async def create_user(user_id, username, session_maker):
             session.add(user)
 
 
-async def get_user(user_id, session_maker) -> User:
+async def get_user(user_id: int, session_maker) -> User:
+    """
+    Получение пользователя по id
+
+    """
     async with session_maker() as session:
         async with session.begin():
             sql_res = await session.execute(select(User).where(User.user_id == user_id))
@@ -35,7 +43,11 @@ async def get_user(user_id, session_maker) -> User:
             return user
 
 
-async def get_user_by_name(username, session_maker) -> User:
+async def get_user_by_name(username: str, session_maker) -> User:
+    """
+    Получение пользователя по username
+
+    """
     async with session_maker() as session:
         async with session.begin():
             sql_res = await session.execute(select(User).where(User.username == username))
@@ -43,15 +55,11 @@ async def get_user_by_name(username, session_maker) -> User:
             return user
 
 
-async def get_top_users(session_maker):
-    async with session_maker() as session:
-        async with session.begin():
-            sql_res = await session.execute(select(User).order_by(User.points).limit(10))
-            top_users = sql_res.all()
-            return top_users
+async def get_top_text(session_maker) -> str:
+    """
+    Формирование текста Топ 10 пользователей с их сообщениями
 
-
-async def get_top_text(session_maker):
+    """
     async with session_maker() as session:
         async with session.begin():
             sql_res = await session.execute(select(User).order_by(User.points.desc()).limit(10))
@@ -71,7 +79,15 @@ async def get_top_text(session_maker):
             return text
 
 
-async def change_user_message(user_id, msg_text, session_maker):
+async def change_user_message(user_id: int, msg_text: str, session_maker):
+    """
+    Изменение сообщения пользователя в БД
+
+    :param user_id:
+    :param msg_text: новый текст
+    :param session_maker:
+    :return:
+    """
     async with session_maker() as session:
         async with session.begin():
             sql_res = await session.execute(select(User).where(User.user_id == user_id))
@@ -80,6 +96,10 @@ async def change_user_message(user_id, msg_text, session_maker):
 
 
 async def get_top_id_list(session_maker):
+    """
+    Получение списка id топ 10 пользователей по баллам
+
+    """
     async with session_maker() as session:
         async with session.begin():
             sql_res = await session.execute(select(User).order_by(User.points.desc()).limit(10))
@@ -90,14 +110,22 @@ async def get_top_id_list(session_maker):
             return id_list
 
 
-async def get_users_count(session_maker):
+async def get_users_count(session_maker) -> int:
+    """
+    Получение общего количества пользователей
+
+    """
     async with session_maker() as session:
         async with session.begin():
             sql_res = await session.execute(select(User))
             return len(sql_res.all())
 
 
-async def check_admin(user_id, session_maker):
+async def check_admin(user_id: int, session_maker):
+    """
+    Проверяем является ли пользователь администратором
+
+    """
     async with session_maker() as session:
         async with session.begin():
             sql_res = await session.execute(select(User).where(User.user_id == user_id))
@@ -106,14 +134,22 @@ async def check_admin(user_id, session_maker):
 
 
 async def get_admins_list_text(session_maker):
+    """
+    Получение списка юзернеймов администраторов
+
+    """
     async with session_maker() as session:
         async with session.begin():
             sql_res = await session.execute(select(User).where(User.status == 'admin'))
             admin_list = sql_res.all()
-            return [f'{admin[0].username}' for admin in admin_list]
+            return [admin[0].username for admin in admin_list]
 
 
-async def del_admin_from_db(username, session_maker):
+async def del_admin_from_db(username: str, session_maker):
+    """
+        Установление пользователю статуса User
+
+    """
     async with session_maker() as session:
         async with session.begin():
             sql_res = await session.execute(select(User).where(User.username == username))
@@ -121,7 +157,11 @@ async def del_admin_from_db(username, session_maker):
             user.status = 'user'
 
 
-async def add_admin_to_db(username, session_maker):
+async def add_admin_to_db(username: str, session_maker):
+    """
+    Установление пользователю статуса Admin
+
+    """
     async with session_maker() as session:
         async with session.begin():
             sql_res = await session.execute(select(User).where(User.username == username))
@@ -129,7 +169,11 @@ async def add_admin_to_db(username, session_maker):
             user.status = 'admin'
 
 
-async def check_user_in_top(user_id, session_maker):
+async def check_user_in_top(user_id: int, session_maker):
+    """
+        Получение параметра 'in_top' у пользователя
+
+    """
     async with session_maker() as session:
         async with session.begin():
             sql_res = await session.execute(select(User).where(User.user_id == user_id))
@@ -137,7 +181,11 @@ async def check_user_in_top(user_id, session_maker):
             return bool(user.in_top)
 
 
-async def change_top_user(user_id, session_maker, in_top):
+async def change_top_user(user_id: int, session_maker, in_top: bool):
+    """
+    Изменение параметра 'in_top' у пользователя
+
+    """
     async with session_maker() as session:
         async with session.begin():
             sql_res = await session.execute(select(User).where(User.user_id == user_id))
@@ -146,6 +194,10 @@ async def change_top_user(user_id, session_maker, in_top):
 
 
 async def get_all_users_id(session_maker):
+    """
+    Получения списка id всех пользователей
+
+    """
     async with session_maker() as session:
         async with session.begin():
             sql_res = await session.execute(select(User))
@@ -156,7 +208,11 @@ async def get_all_users_id(session_maker):
             return id_list
 
 
-async def add_ref_to_user(user_id, session_maker):
+async def add_ref_to_user(user_id: int, session_maker):
+    """
+    Добавление 100 баллов пользователю
+
+    """
     async with session_maker() as session:
         async with session.begin():
             sql_res = await session.execute(select(User).where(User.user_id == user_id))
@@ -164,10 +220,44 @@ async def add_ref_to_user(user_id, session_maker):
             user.points += 100
 
 
-async def get_user_points(user_id, session_maker):
+async def get_user_points(user_id: int, session_maker):
+    """
+    Получаем баллы пользователя из БД
+
+    """
     async with session_maker() as session:
         async with session.begin():
             sql_res = await session.execute(select(User).where(User.user_id == user_id))
             user: User = sql_res.scalar()
             points = user.points
             return points
+
+
+async def check_ban(user_id: int, session_maker):
+    """
+    Проверяем забанен ли пользователь
+
+    """
+    async with session_maker() as session:
+        async with session.begin():
+            sql_res = await session.execute(select(User).where(User.user_id == user_id))
+            user: User = sql_res.scalar()
+            return bool(user.status == 'ban')
+
+
+async def ban_user(user: str, session_maker):
+    """
+    Баним пользователя по id или user_name
+
+    """
+    async with session_maker() as session:
+        async with session.begin():
+            user_data = user.strip()
+            if user_data.isdigit():
+                sql_res = await session.execute(select(User).where(User.user_id == int(user_data)))
+                user: User = sql_res.scalar()
+                user.status = 'ban'
+            else:
+                sql_res = await session.execute(select(User).where(User.username == user_data))
+                user: User = sql_res.scalar()
+                user.status = 'ban'
