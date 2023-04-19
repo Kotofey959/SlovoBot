@@ -208,16 +208,16 @@ async def get_all_users_id(session_maker):
             return id_list
 
 
-async def add_ref_to_user(user_id: int, session_maker):
+async def change_points(user_id: int, session_maker, points=1):
     """
-    Добавление 100 баллов пользователю
+    Изменение баллов пользователя
 
     """
     async with session_maker() as session:
         async with session.begin():
             sql_res = await session.execute(select(User).where(User.user_id == user_id))
             user: User = sql_res.scalar()
-            user.points += 100
+            user.points += points
 
 
 async def get_user_points(user_id: int, session_maker):
@@ -245,19 +245,14 @@ async def check_ban(user_id: int, session_maker):
             return bool(user.status == 'ban')
 
 
-async def ban_user(user: str, session_maker):
+async def ban_user(username: str, session_maker):
     """
-    Баним пользователя по id или user_name
+    Баним пользователя по username
 
     """
     async with session_maker() as session:
         async with session.begin():
-            user_data = user.strip()
-            if user_data.isdigit():
-                sql_res = await session.execute(select(User).where(User.user_id == int(user_data)))
-                user: User = sql_res.scalar()
-                user.status = 'ban'
-            else:
-                sql_res = await session.execute(select(User).where(User.username == user_data))
-                user: User = sql_res.scalar()
-                user.status = 'ban'
+            user_data = username.strip()
+            sql_res = await session.execute(select(User).where(User.username == user_data))
+            user: User = sql_res.scalar()
+            user.status = 'ban'

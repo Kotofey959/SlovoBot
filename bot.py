@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from environs import Env
+from db_data import username, password, host, port, database
 
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -31,11 +32,11 @@ async def main():
 
     postgres_url = URL.create(
         'postgresql+asyncpg',
-        username='postgres',
-        password='Lol4ik594770146',
-        host='localhost',
-        port=5432,
-        database='SlovoBot'
+        username=username,
+        password=password,
+        host=host,
+        port=port,
+        database=database
 
     )
 
